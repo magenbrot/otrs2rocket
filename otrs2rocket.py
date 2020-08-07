@@ -4,12 +4,15 @@
 #
 # Oliver Völker <info@ovtec.it>
 #
+# Modified by Nico Domino <ndomino@newtelco.de> for OTRS Postgres compatibility
+#
 
 import json
 import os
 import pymysql
 import requests
 import sys
+import psycopg2
 
 # Rocket.Chat incoming webhook URL
 #
@@ -28,21 +31,35 @@ MYSQL_USER = os.getenv("MYSQL_USER")
 MYSQL_PASS = os.getenv("MYSQL_PASS")
 MYSQL_DB   = os.getenv("MYSQL_DB")
 
+# PostgreSQL settings
+PSQL_HOST = os.getenv("PSQL_HOST")
+PSQL_PORT = int(os.getenv("PSQL_PORT"))
+PSQL_USER = os.getenv("PSQL_USER")
+PSQL_PASS = os.getenv("PSQL_PASS")
+PSQL_DB   = os.getenv("PSQL_DB")
+
 if len(sys.argv) < 3:
-    print("too less arguments")
+    print("CLI Arguments Missing")
     sys.exit (1)
 
-conn = pymysql.connect(host=MYSQL_HOST, port=MYSQL_PORT, user=MYSQL_USER, passwd=MYSQL_PASS, db=MYSQL_DB)
-cur = conn.cursor()
-sql = "SELECT ticket.id, ticket.tn, ticket.title, CASE WHEN customer_company.name IS NOT NULL THEN customer_company.name ELSE ticket.customer_id END AS customer FROM ticket LEFT JOIN customer_company ON (ticket.customer_id = customer_company.customer_id) WHERE tn = %s"
-cur.execute(sql, sys.argv[1])
+if MYSQL_HOST:
+    conn = pymysql.connect(host=MYSQL_HOST, port=MYSQL_PORT, user=MYSQL_USER, passwd=MYSQL_PASS, db=MYSQL_DB)
+    cur = conn.cursor()
+    sql = "SELECT ticket.id, ticket.tn, ticket.title, CASE WHEN customer_company.name IS NOT NULL THEN customer_company.name ELSE ticket.customer_id END AS customer FROM ticket LEFT JOIN customer_company ON (ticket.customer_id = customer_company.customer_id) WHERE tn = %s"
+    cur.execute(sql, sys.argv[1])
 
-#print(cur.description)
-#print()
+if PSQL_HOST:
+    conn = psycopg2.connect(dbname=PSQL_DB, user=PSQL_USER, password=PSQL_PASS, host=PSQL_HOST, port=PSQL_PORT)
+    cur = conn.cursor()
+    sql = "SELECT ticket.id, ticket.tn, ticket.title, CASE WHEN customer_company.name IS NOT NULL THEN customer_company.name ELSE ticket.customer_id END AS customer FROM ticket LEFT JOIN customer_company ON (ticket.customer_id = customer_company.customer_id) WHERE tn = %s"
+    cur.execute(sql, (sys.argv[2],))
+
+# print(cur)
+# print(cur.rowcount)
 
 if cur.rowcount:
     for row in cur:
-      #print(row)
+      # print(row)
       id = str(row[0])
       tn = row[1]
       title = row[2]
@@ -58,7 +75,7 @@ conn.close()
 
 headers = {'Content-type': 'application/json'}
 payload = {'text': 'New ticket #' + tn + ' from \"' + customer + '\" --> \"' + title + '\"\n' + OTRS_URL + id}
-#print(payload)
+# print(payload)
 r = requests.post(WEBHOOK_URL, json=payload, headers=headers)
 
 if r.status_code != 200:
