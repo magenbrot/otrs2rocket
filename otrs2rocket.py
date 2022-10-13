@@ -5,7 +5,6 @@
 # Oliver Völker <info@ovtec.it>
 #
 
-import json
 import os
 import pymysql
 import requests
@@ -34,7 +33,7 @@ if len(sys.argv) < 3:
 
 conn = pymysql.connect(host=MYSQL_HOST, port=MYSQL_PORT, user=MYSQL_USER, passwd=MYSQL_PASS, db=MYSQL_DB)
 cur = conn.cursor()
-sql = "SELECT ticket.id, ticket.tn, ticket.title, CASE WHEN customer_company.name IS NOT NULL THEN customer_company.name ELSE ticket.customer_id END AS customer FROM ticket LEFT JOIN customer_company ON (ticket.customer_id = customer_company.customer_id) WHERE tn = %s"
+sql = "SELECT ticket.id, ticket.tn, ticket.title, queue.name, CASE WHEN customer_company.name IS NOT NULL THEN customer_company.name ELSE ticket.customer_id END AS customer FROM ticket LEFT JOIN queue ON (ticket.queue_id = queue.id) LEFT JOIN customer_company ON (ticket.customer_id = customer_company.customer_id) WHERE tn = %s"
 cur.execute(sql, sys.argv[1])
 
 #print(cur.description)
@@ -47,6 +46,7 @@ if cur.rowcount:
       tn = row[1]
       title = row[2]
       customer = row[3]
+      queue = row[4]
 else:
     # exit if no matching ticket was found
     cur.close()
@@ -57,7 +57,7 @@ cur.close()
 conn.close()
 
 headers = {'Content-type': 'application/json'}
-payload = {'text': 'New ticket #' + tn + ' from \"' + customer + '\" --> \"' + title + '\"\n' + OTRS_URL + id}
+payload = {'text': 'New ticket #' + tn + ' in queue \"' + queue + '\" from \"' + customer + '\" --> \"' + title + '\"\n' + OTRS_URL + id}
 #print(payload)
 r = requests.post(WEBHOOK_URL, json=payload, headers=headers)
 
