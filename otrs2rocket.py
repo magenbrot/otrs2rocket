@@ -19,10 +19,9 @@ load_dotenv()
 DEBUG = False
 
 # Rocket.Chat incoming webhook URL
-#
 # prod:
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
-# test:
+# dev:
 #WEBHOOK_URL = os.getenv("WEBHOOK_URL_DEV")
 
 # OTRS URL
@@ -68,7 +67,6 @@ if PSQL_HOST:
 
 if cur.rowcount:
   for row in cur:
-    # print(row)
     id = str(row[0])
     tn = row[1]
     title = row[2]
@@ -89,7 +87,7 @@ if DEBUG:
   print(id, tn, title, customer, queue)
 
 headers = {'Content-type': 'application/json'}
-payload = {'alias': 'OTRS Bot', 'icon_url': 'https://otrs.com/wp-content/uploads/Logo-Kreis-control-RGB-1000px-150x150.png', 'attachments': [{ 'color': '#ab4a53', 'text': ':dna: ' + queue + '\n :bookmark_tabs: #' + tn + '\n :blond-haired_man_light_skin_tone: ' + customer + '\n\n :arrow_right: **' + title + '**\n\n:globe_with_meridians:  [View in OTRS](' + OTRS_URL + id + ')'}]}
+payload = {'alias': 'OTRS Bot', 'icon_url': os.getenv("LOGO_URL"), 'text': '\n', 'attachments': [{ 'color': '#ab4a53', 'text': ':dna: ' + queue + '\n :bookmark_tabs: #' + tn + '\n :blond-haired_man_light_skin_tone: ' + customer + '\n\n :arrow_right: **' + title + '**\n\n:globe_with_meridians:  [View in OTRS](' + OTRS_URL + id + ')'}]}
 
 if DEBUG:
   print(payload)
