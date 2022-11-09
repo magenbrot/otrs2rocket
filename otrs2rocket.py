@@ -1,11 +1,11 @@
 #!/usr/bin/python3
-#
-# Post new OTRS tickets to Rocket.Chat channel
-#
-# Oliver Völker <info@ovtec.it>
-#
-# Modified by Nico Domino <ndomino@newtelco.de> for OTRS Postgres compatibility
-#
+"""
+ Post new OTRS tickets to Rocket.Chat channel
+
+ Oliver Völker <info@ovtec.it>
+
+ Modified by Nico Domino <ndomino@newtelco.de> for OTRS Postgres compatibility
+"""
 
 import pymysql
 import psycopg2
@@ -89,7 +89,7 @@ if DEBUG:
   print(id, tn, title, customer, queue)
 
 headers = {'Content-type': 'application/json'}
-payload = {'alias': 'OTRS Bot', 'icon_url': 'https://otrs.com/wp-content/uploads/Logo-Kreis-control-RGB-1000px-150x150.png', 'text': '##### ' + title + '\n', 'attachments': [{ 'color': '#ab4a53', 'text': ':dna: **' + queue + '**\n :bookmark_tabs: **#' + tn + '**\n :blond-haired_man_light_skin_tone: **' + customer + '** \n\n :globe_with_meridians:  [View in OTRS](' + OTRS_URL + id + ')'}]}
+payload = {'alias': 'OTRS Bot', 'icon_url': 'https://otrs.com/wp-content/uploads/Logo-Kreis-control-RGB-1000px-150x150.png', 'attachments': [{ 'color': '#ab4a53', 'text': ':dna: ' + queue + '\n :bookmark_tabs: #' + tn + '\n :blond-haired_man_light_skin_tone: ' + customer + '\n\n :arrow_right: **' + title + '**\n\n:globe_with_meridians:  [View in OTRS](' + OTRS_URL + id + ')'}]}
 
 if DEBUG:
   print(payload)
