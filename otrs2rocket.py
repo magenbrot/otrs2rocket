@@ -19,24 +19,21 @@ load_dotenv()
 DEBUG = False
 
 # Rocket.Chat incoming webhook URL
-# prod:
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
-# dev:
-#WEBHOOK_URL = os.getenv("WEBHOOK_URL_DEV")
 
 # OTRS URL
 OTRS_URL = os.getenv("OTRS_URL")
 
 # MySQL settings
 MYSQL_HOST = os.getenv("MYSQL_HOST")
-MYSQL_PORT = int(os.getenv("MYSQL_PORT"))
+MYSQL_PORT = int(os.getenv("MYSQL_PORT", 0))
 MYSQL_USER = os.getenv("MYSQL_USER")
 MYSQL_PASS = os.getenv("MYSQL_PASS")
 MYSQL_DB   = os.getenv("MYSQL_DB")
 
 # PostgreSQL settings
 PSQL_HOST = os.getenv("PSQL_HOST")
-PSQL_PORT = int(os.getenv("PSQL_PORT"))
+PSQL_PORT = int(os.getenv("PSQL_PORT", 0))
 PSQL_USER = os.getenv("PSQL_USER")
 PSQL_PASS = os.getenv("PSQL_PASS")
 PSQL_DB   = os.getenv("PSQL_DB")
@@ -65,6 +62,10 @@ if PSQL_HOST:
   sql = "SELECT ticket.id, ticket.tn, ticket.title, queue.name, CASE WHEN customer_company.name IS NOT NULL THEN customer_company.name ELSE ticket.customer_id END AS customer FROM ticket LEFT JOIN queue ON (ticket.queue_id = queue.id) LEFT JOIN customer_company ON (ticket.customer_id = customer_company.customer_id) WHERE tn = %s"
   cur.execute(sql, (sys.argv[1],))
 
+if not MYSQL_HOST and not PSQL_HOST:
+  print('Err: Neither MYSQL_HOST nor PSQL_HOST is set')
+  sys.exit(1)
+
 if cur.rowcount:
   for row in cur:
     id = str(row[0])
@@ -92,7 +93,7 @@ payload = {'alias': 'OTRS Bot', 'icon_url': os.getenv("LOGO_URL"), 'text': 'neue
 if DEBUG:
   print(payload)
 
-r = requests.post(WEBHOOK_URL, json=payload, headers=headers)
+r = requests.post(WEBHOOK_URL, json=payload, headers=headers, timeout=10)
 
 if DEBUG:
   print(r)
